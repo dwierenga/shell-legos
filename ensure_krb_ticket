@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+realm=$1
+if [[ -z "$realm" ]]; then
+    echo "Must provide realm to ensure ticket"
+    exit 1
+fi
+
+ticket=$(klist | grep "krbtgt/${realm}@${realm}" )
+if [[ -z "$ticket" ]]; then
+    kinit ${USER}@${realm}
+    exit $? 
+else
+    expires=$(echo "$ticket" | cut -d ' ' -f 6-9 ) 
+    expires_epoch=$(date -j -f "%b %d %H:%M:%S %Y" "$expires" +"%s")
+    now_epoch=$(date +"%s")
+#    echo "expires: $expires_epoch  now: $now_epoch"
+    if [[ $expires_epoch < $now_epoch ]]; then
+        kinit ${USER}@${realm}
+        exit $? 
+    fi
+    exit 0
+fi
