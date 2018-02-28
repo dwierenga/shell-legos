@@ -4,18 +4,25 @@ if [[ -z "$realm" ]]; then
     echo "Must provide realm to ensure ticket"
     exit 1
 fi
+function init_and_exit() {
+        kinit ${USER}@${realm}
+        exit $?
+}
 
 ticket=$(klist 2>/dev/null | grep "krbtgt/${realm}@${realm}" )
 if [[ -z "$ticket" ]]; then
-    kinit ${USER}@${realm}
-    exit $?
+    init_and_exit
 else
     os_type=$(uname)
     if [[ $os_type == "Darwin" ]]; then
-        expires=$(echo "$ticket" | cut -d ' ' -f 6-9 )
-        expires_epoch=$(date -j -f "%b %d %H:%M:%S %Y" "$expires" +"%s")
-        now_epoch=$(date +"%s")
-    #    echo "expires: $expires_epoch  now: $now_epoch"
+        if [[  $(echo "$ticket" | grep -c  "Expired") -ge 1 ]]; then 
+            init_and_exit
+        else 
+            expires=$(echo "$ticket" | cut -d ' ' -f 6-11 | sed "s/  / /g")
+            expires_epoch=$(date -j -f " %b %d %H:%M:%S %Y" "$expires" +"%s")
+            now_epoch=$(date +"%s")
+        #    echo "expires: $expires_epoch  now: $now_epoch"
+        fi
     elif [[ $os_type == "Linux" ]]; then
         expires=$(echo "$ticket" | cut -d ' ' -f 4-5 )
         expires_epoch=$(date -d "$expires" +"%s")
@@ -25,8 +32,7 @@ else
         exit 2
     fi
     if [[ $expires_epoch < $now_epoch ]]; then
-        kinit ${USER}@${realm}
-        exit $?
+        init_and_exit
     fi
     exit 0
 fi
