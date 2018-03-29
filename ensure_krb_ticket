@@ -18,7 +18,7 @@ else
         if [[  $(echo "$ticket" | grep -c  "Expired") -ge 1 ]]; then 
             init_and_exit
         else 
-            expires=$(echo "$ticket" | cut -d ' ' -f 6-11 | sed "s/  / /g")
+            expires=$(echo "$ticket" | cut -d ' ' -f 6-11 | sed "s/  / /g" | sed "s/ krbtgt.*$//")
             expires_epoch=$(date -j -f " %b %d %H:%M:%S %Y" "$expires" +"%s")
             now_epoch=$(date +"%s")
         #    echo "expires: $expires_epoch  now: $now_epoch"
