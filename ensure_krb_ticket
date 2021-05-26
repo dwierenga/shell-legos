@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
-realm=$1
-if [[ -z "$realm" ]]; then
-    echo "Must provide realm to ensure ticket"
+input=$1
+if [[ -z "$input" ]]; then
+    echo "Must provide user@realm to ensure ticket"
     exit 1
 fi
-function init_and_exit() {
-        kinit ${USER}@${realm}
+principal=$(echo "$input" | cut -f1 -d'@')
+realm=$(echo "$input" | cut -f2 -d'@')
+
+init_and_exit() {
+        kinit "${principal}@${realm}"
         exit $?
 }
 
